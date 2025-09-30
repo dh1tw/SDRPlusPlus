@@ -70,13 +70,38 @@ private:
         MidiControlModule* _this = (MidiControlModule*)userData;
         if (!_this->enabled) return;
 
-        // Process MIDI messages
-        if (message->size() >= 3) {
-            unsigned char status = message->at(0);
-            unsigned char data1 = message->at(1);
-            unsigned char data2 = message->at(2);
+        if (message->size() < 3) {
+            return;
+        }
 
-            flog::info("MIDI message - Status: 0x{:02X}, Data1: 0x{:02X}, Data2: 0x{:02X}", status, data1, data2);
+        unsigned char cmd = message->at(0);
+        unsigned char group = message->at(1);
+        unsigned char value = message->at(2);
+
+        flog::info("MIDI message - Cmd: 0x{}, Group: 0x{}, Value: 0x{}", cmd, group, value);
+
+        flog::info("MIDI message - Cmd: {}", cmd);
+        flog::info("MIDI message - Group: {}", group);
+        flog::info("MIDI message - Value: {}", value);
+
+        std::string vfoName = gui::waterfall.selectedVFO;
+        double centerFrequency = gui::waterfall.getCenterFrequency();
+        double offset = sigpath::vfoManager.getOffset(vfoName);
+
+        if (cmd == 176 && group == 6) {
+
+            if (value <= 10) {
+                offset += 100 * value;
+            }
+            else {
+                offset -= 100 * (128 - value);
+            }
+            sigpath::vfoManager.setOffset(vfoName, offset);
+            // flog::info("New Freq: {}", sigpath::vfoManager.getFrequency(vfoName);
+        }
+
+        if (cmd == 128 && group == 02) {
+            sigpath::vfoManager.setOffset(vfoName, 0);
         }
     }
 
