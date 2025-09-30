@@ -1,6 +1,12 @@
 #include <imgui.h>
 #include <module.h>
 #include <gui/gui.h>
+#include <core.h>
+#include <rtmidi/RtMidi.h>
+#include <string>
+#include <vector>
+#include <map>
+
 
 SDRPP_MOD_INFO{
     /* Name:            */ "midi_ctl",
@@ -11,9 +17,22 @@ SDRPP_MOD_INFO{
 };
 
 class DemoModule : public ModuleManager::Instance {
+
+
 public:
     DemoModule(std::string name) {
         this->name = name;
+
+        // Initialize RtMidi
+        try {
+            midiIn = new RtMidiIn();
+            midiOut = new RtMidiOut();
+        }
+        catch (RtMidiError& error) {
+            flog::error("Error creating RtMidi instance: {0}", error.getMessage());
+            return;
+        }
+
         gui::menu.registerEntry(name, menuHandler, this, NULL);
     }
 
@@ -38,11 +57,15 @@ public:
 private:
     static void menuHandler(void* ctx) {
         DemoModule* _this = (DemoModule*)ctx;
-        ImGui::Text("Hello SDR++, my name is %s", _this->name.c_str());
+        ImGui::Text("Hello SDR++ ok, my name is Dude %s", _this->name.c_str());
     }
 
     std::string name;
     bool enabled = true;
+    RtMidiIn* midiIn = nullptr;
+    RtMidiOut* midiOut = nullptr;
+    std::vector<std::string> deviceList;
+    std::string selectedDevice = "No device selected";
 };
 
 MOD_EXPORT void _INIT_() {
